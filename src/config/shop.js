@@ -20,3 +20,7 @@ export const ORDER_TRANSITIONS = {
 
 export const MAX_LINES_PER_ORDER = 10
 export const MAX_QTY_PER_LINE = 5
+
+// Product categories the admin can choose. Keep in sync with client/src/data/collections.js.
+export const PRODUCT_CATEGORIES = ['jamdani', 'jewellery']
+export const MAX_PRODUCT_IMAGES = 8

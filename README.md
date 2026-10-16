@@ -41,6 +41,8 @@ npm run dev            # restarts on file changes
 | POST | `/api/orders` | Places a cash-on-delivery order (limited to 10 per 15 minutes per IP) |
 | POST | `/api/admin/login` | Admin login, returns a token |
 | GET/PATCH | `/api/admin/orders…` | Order list, detail and status changes (token required), see docs/02 |
+| GET/POST/PATCH/DELETE | `/api/admin/products…` | Product management (token required), see docs/04 |
+| GET/POST | `/api/admin/uploads…` | Photo upload status and Cloudinary upload signature, see docs/04 |
 
 `POST /api/orders` body:
 
