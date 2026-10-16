@@ -1,0 +1,28 @@
+{
+  "name": "aanchol-server",
+  "private": true,
+  "version": "0.1.0",
+  "description": "API for the Aanchol shop: products and orders (Express + MongoDB)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --watch src/server.js",
+    "dev:memory": "node --env-file-if-exists=.env scripts/dev-memory.js",
+    "start": "node src/server.js",
+    "seed": "node --env-file-if-exists=.env scripts/seed.js",
+    "test": "node --test --test-concurrency=1 \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "mongoose": "^9.11.2"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.3.0",
+    "supertest": "^7.3.1"
+  }
+}

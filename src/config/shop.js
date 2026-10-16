@@ -1,0 +1,13 @@
+// Prices and fees are decided here, never trusted from the browser.
+// Keep in sync with client/src/config/brand.js (DELIVERY_OPTIONS).
+export const DELIVERY_OPTIONS = [
+  { id: 'inside-dhaka', label: 'Inside Dhaka', eta: '1–2 days', fee: 0 },
+  { id: 'outside-dhaka', label: 'Outside Dhaka', eta: '2–5 days', fee: 150 },
+]
+
+export const PAYMENT_METHODS = ['cod']
+
+export const ORDER_STATUSES = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']
+
+export const MAX_LINES_PER_ORDER = 10
+export const MAX_QTY_PER_LINE = 5
