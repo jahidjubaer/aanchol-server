@@ -14,8 +14,9 @@ The API runs at http://localhost:4000. Run the client (`aanchol-client`) with `n
 ### With MongoDB Atlas
 
 ```bash
-cp .env.example .env   # paste your Atlas connection string into MONGODB_URI
+cp .env.example .env   # fill in MONGODB_URI and JWT_SECRET
 npm run seed           # loads the sample products
+npm run create-admin   # your admin login
 npm run dev            # restarts on file changes
 ```
 
@@ -26,6 +27,7 @@ npm run dev            # restarts on file changes
 | `npm run dev` | API with auto-restart, using `MONGODB_URI` from `.env` |
 | `npm run dev:memory` | API on a temporary in-memory database (wiped on stop) |
 | `npm run seed` | Inserts or updates the sample products (orders are untouched) |
+| `npm run create-admin` | Creates an admin login (or resets its password) |
 | `npm start` | Production start (Render) |
 | `npm test` | API tests on an in-memory database |
 
@@ -37,6 +39,8 @@ npm run dev            # restarts on file changes
 | GET | `/api/products?category=jamdani` | Active products, newest first |
 | GET | `/api/products/:slug` | One product, or 404 |
 | POST | `/api/orders` | Places a cash-on-delivery order (limited to 10 per 15 minutes per IP) |
+| POST | `/api/admin/login` | Admin login, returns a token |
+| GET/PATCH | `/api/admin/orders…` | Order list, detail and status changes (token required), see docs/02 |
 
 `POST /api/orders` body:
 

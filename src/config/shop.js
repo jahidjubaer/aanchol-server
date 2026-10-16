@@ -9,5 +9,14 @@ export const PAYMENT_METHODS = ['cod']
 
 export const ORDER_STATUSES = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']
 
+// Which status an order may move to next. Delivered and cancelled are final.
+export const ORDER_TRANSITIONS = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['shipped', 'cancelled'],
+  shipped: ['delivered'],
+  delivered: [],
+  cancelled: [],
+}
+
 export const MAX_LINES_PER_ORDER = 10
 export const MAX_QTY_PER_LINE = 5

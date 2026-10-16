@@ -12,6 +12,15 @@ const orderItemSchema = new mongoose.Schema(
   { _id: false },
 )
 
+const statusChangeSchema = new mongoose.Schema(
+  {
+    status: { type: String, enum: ORDER_STATUSES, required: true },
+    at: { type: Date, default: Date.now },
+    by: String, // admin email, or 'customer' when the order is placed
+  },
+  { _id: false },
+)
+
 const orderSchema = new mongoose.Schema(
   {
     orderNumber: { type: String, required: true, unique: true },
@@ -37,16 +46,23 @@ const orderSchema = new mongoose.Schema(
       note: String,
     },
     status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true },
+    statusHistory: { type: [statusChangeSchema], default: () => [{ status: 'pending', by: 'customer' }] },
+    adminNote: { type: String, maxlength: 1000 }, // only visible in the admin
   },
   { timestamps: true },
 )
 
+orderSchema.index({ createdAt: -1 })
+
+// Public shape. The admin routes add adminNote and statusHistory themselves.
 orderSchema.set('toJSON', {
   versionKey: false,
   transform: (_doc, ret) => {
     ret.id = ret.orderNumber
     delete ret._id
     delete ret.orderNumber
+    delete ret.adminNote
+    delete ret.statusHistory
     ret.items = ret.items.map(({ product: _product, ...item }) => item)
     return ret
   },

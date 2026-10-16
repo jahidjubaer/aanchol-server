@@ -24,7 +24,7 @@ async function reserveStock(lines) {
   return reserved
 }
 
-function releaseStock(lines) {
+export function releaseStock(lines) {
   return Promise.all(lines.map((l) => Product.updateOne({ _id: l.product._id }, { $inc: { stock: l.qty } })))
 }
 

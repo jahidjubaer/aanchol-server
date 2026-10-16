@@ -11,4 +11,9 @@ export const env = {
   // Comma-separated list, e.g. "http://localhost:5173,https://aanchol.com"
   clientOrigins: (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(',').map((o) => o.trim()),
   mongoUri: () => required('MONGODB_URI'),
+  jwtSecret: () => {
+    const secret = required('JWT_SECRET')
+    if (secret.length < 32) throw new Error('JWT_SECRET must be at least 32 characters long.')
+    return secret
+  },
 }
