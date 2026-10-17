@@ -1,7 +1,7 @@
 import { DELIVERY_OPTIONS, MAX_LINES_PER_ORDER, MAX_QTY_PER_LINE } from '../config/shop.js'
+import { normalizePhone, PHONE_ERROR } from './phone.js'
 
 // Same rules as client/src/utils/checkout.js, plus the checks a browser can't be trusted with.
-const BD_PHONE = /^(?:\+?88)?(01[3-9]\d{8})$/
 const SLUG = /^[a-z0-9-]{1,80}$/
 
 const text = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '')
@@ -22,9 +22,9 @@ export function validateOrderInput(body) {
   }
 
   if (customer.name.length < 2) errors.name = 'Please enter your full name.'
-  const phoneMatch = customer.phone.match(BD_PHONE)
-  if (phoneMatch) customer.phone = phoneMatch[1] // stored as 01XXXXXXXXX
-  else errors.phone = 'Enter a valid Bangladeshi mobile number, e.g. 01712345678.'
+  const phone = normalizePhone(customer.phone)
+  if (phone) customer.phone = phone // stored as 01XXXXXXXXX
+  else errors.phone = PHONE_ERROR
   if (customer.email && !/^\S+@\S+\.\S+$/.test(customer.email)) errors.email = 'Enter a valid email or leave it empty.'
   if (!customer.city) errors.city = 'Please enter your city or district.'
   if (customer.address.length < 8) errors.address = 'Please enter your full delivery address.'

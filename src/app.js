@@ -4,6 +4,7 @@ import helmet from 'helmet'
 import mongoose from 'mongoose'
 import { env } from './config/env.js'
 import { errorHandler, notFound } from './middleware/errors.js'
+import { accountRouter } from './routes/account.js'
 import { adminRouter } from './routes/admin.js'
 import { ordersRouter } from './routes/orders.js'
 import { productsRouter } from './routes/products.js'
@@ -24,6 +25,7 @@ export function createApp() {
   app.use('/api/site', siteRouter)
   app.use('/api/products', productsRouter)
   app.use('/api/orders', ordersRouter)
+  app.use('/api/account', accountRouter)
   app.use('/api/admin', adminRouter)
 
   app.use(notFound)

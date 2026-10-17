@@ -43,3 +43,9 @@ export const MAX_HERO_SLIDES = 8
 
 // A campaign can take at most this much off. Anything bigger is almost certainly a typo.
 export const MAX_PERCENT_OFF = 70
+
+// Customer accounts
+export const MIN_PASSWORD = 8
+export const MAX_ADDRESSES = 5
+export const MAX_WISHLIST = 100
+export const RESET_LINK_HOURS = 24

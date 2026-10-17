@@ -12,6 +12,8 @@ export function toAdminJSON(order) {
     adminNote: doc.adminNote ?? '',
     statusHistory: doc.statusHistory,
     next: ORDER_TRANSITIONS[doc.status],
+    ...(doc.customerId ? { customerId: String(doc.customerId) } : {}),
+    ...(doc.sample ? { sample: true } : {}),
   }
 }
 

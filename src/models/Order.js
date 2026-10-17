@@ -50,6 +50,9 @@ const orderSchema = new mongoose.Schema(
     status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true },
     statusHistory: { type: [statusChangeSchema], default: () => [{ status: 'pending', by: 'customer' }] },
     adminNote: { type: String, maxlength: 1000 }, // only visible in the admin
+    // The account it belongs to: placed while signed in, or claimed later with order number + phone.
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', index: true },
+    sample: { type: Boolean, default: undefined }, // demo data, removed with npm run sample:remove
   },
   { timestamps: true },
 )
@@ -65,6 +68,8 @@ orderSchema.set('toJSON', {
     delete ret.orderNumber
     delete ret.adminNote
     delete ret.statusHistory
+    delete ret.customerId
+    delete ret.sample
     ret.items = ret.items.map(({ product: _product, ...item }) => item)
     return ret
   },

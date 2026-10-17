@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
+import { optionalCustomer } from '../middleware/customerAuth.js'
 import { createOrder } from '../services/orders.js'
 import { HttpError } from '../utils/httpError.js'
 import { validateOrderInput } from '../utils/validateOrder.js'
@@ -17,9 +18,9 @@ const orderLimiter = rateLimit({
 })
 
 // POST /api/orders  { customer: {...}, delivery: 'inside-dhaka', items: [{ slug, qty }] }
-ordersRouter.post('/', orderLimiter, async (req, res) => {
+ordersRouter.post('/', orderLimiter, optionalCustomer, async (req, res) => {
   const { errors, value } = validateOrderInput(req.body)
   if (Object.keys(errors).length) throw new HttpError(400, 'Please check your details.', { fields: errors })
-  const order = await createOrder(value)
+  const order = await createOrder({ ...value, customerId: req.customer?._id })
   res.status(201).json({ order })
 })

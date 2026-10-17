@@ -8,7 +8,7 @@ import { checkProductCategory } from './categories.js'
 
 // The admin also sees hidden products and when they were last changed.
 export function toAdminProductJSON(product) {
-  return { ...product.toJSON(), active: product.active, updatedAt: product.updatedAt }
+  return { ...product.toJSON(), active: product.active, updatedAt: product.updatedAt, ...(product.sample ? { sample: true } : {}) }
 }
 
 function checkPrices({ price, compareAt }) {

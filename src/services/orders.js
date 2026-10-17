@@ -30,7 +30,7 @@ export function releaseStock(lines) {
   return Promise.all(lines.map((l) => Product.updateOne({ _id: l.product._id }, { $inc: { stock: l.qty } })))
 }
 
-export async function createOrder({ customer, delivery, items, expectedSubtotal }) {
+export async function createOrder({ customer, delivery, items, expectedSubtotal, customerId }) {
   const [products, campaign] = await Promise.all([
     liveCategorySlugs().then((live) =>
       Product.find({ slug: { $in: items.map((i) => i.slug) }, active: true, category: { $in: live } }),
@@ -80,6 +80,7 @@ export async function createOrder({ customer, delivery, items, expectedSubtotal 
     total: subtotal + delivery.fee,
     payment: { method: 'cod', paid: false },
     customer,
+    ...(customerId ? { customerId } : {}),
   }
 
   // Order numbers are random; on the rare clash, try a new one.

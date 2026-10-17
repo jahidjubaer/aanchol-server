@@ -17,6 +17,7 @@ const campaignSchema = new mongoose.Schema(
     endsAt: { type: Date, required: true },
     popup: { type: Boolean, default: true },
     active: { type: Boolean, default: true },
+    sample: { type: Boolean, default: undefined }, // demo data, removed with npm run sample:remove
   },
   { timestamps: true },
 )
@@ -29,6 +30,7 @@ campaignSchema.set('toJSON', {
     ret.id = doc._id.toString()
     delete ret._id
     delete ret.createdAt
+    if (!ret.sample) delete ret.sample
     return ret
   },
 })

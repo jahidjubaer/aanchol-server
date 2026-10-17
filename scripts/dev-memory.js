@@ -21,4 +21,9 @@ console.log(`Seeded ${await seedProducts()} products into the in-memory database
 await upsertAdmin(DEV_ADMIN)
 console.log(`Dev admin login: ${DEV_ADMIN.email} (password in .env.example)`)
 
+const { addSampleData } = await import('../src/seed/sample.js')
+const sample = await addSampleData({ campaignLive: true, customerPassword: process.env.SAMPLE_CUSTOMER_PASSWORD || 'sample-pass-123' })
+console.log(`Sample data: ${sample.products} products, ${sample.orders} orders, running 10% campaign.`)
+console.log(`Sample customer login: ${sample.customerPhone} / ${sample.customerPassword}`)
+
 process.on('exit', () => mongo.stop())

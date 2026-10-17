@@ -23,6 +23,7 @@ const productSchema = new mongoose.Schema(
     stock: { type: Number, required: true, min: 0, default: 0 },
     addedOn: { type: Date, default: Date.now },
     active: { type: Boolean, default: true },
+    sample: { type: Boolean, default: undefined }, // demo data, removed with npm run sample:remove
   },
   { timestamps: true },
 )
@@ -33,6 +34,7 @@ productSchema.set('toJSON', {
   transform: (_doc, ret) => {
     delete ret._id
     delete ret.active
+    delete ret.sample
     delete ret.createdAt
     delete ret.updatedAt
     ret.addedOn = ret.addedOn?.toISOString().slice(0, 10)

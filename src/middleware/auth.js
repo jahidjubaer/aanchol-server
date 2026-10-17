@@ -22,6 +22,8 @@ export async function requireAdmin(req, _res, next) {
   } catch {
     throw new HttpError(401, 'Your session has ended. Please log in again.')
   }
+  // Customer logins are signed with the same secret, but never open the admin.
+  if (payload.aud) throw new HttpError(401, 'Please log in.')
   const admin = mongoose.isValidObjectId(payload.sub) ? await Admin.findOne({ _id: payload.sub, active: true }) : null
   if (!admin) throw new HttpError(401, 'Please log in.')
   req.admin = admin

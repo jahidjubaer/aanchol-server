@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit'
 import { requireAdmin, signAdminToken } from '../middleware/auth.js'
 import { Admin } from '../models/Admin.js'
 import { adminContentRouter } from './adminContent.js'
+import { adminCustomersRouter } from './adminCustomers.js'
 import { adminProductsRouter } from './adminProducts.js'
 import { getOrder, listOrders, toAdminJSON, updateOrder } from '../services/adminOrders.js'
 import { HttpError } from '../utils/httpError.js'
@@ -42,6 +43,7 @@ adminRouter.post('/login', loginLimiter, async (req, res) => {
 adminRouter.use(requireAdmin)
 adminRouter.use(adminProductsRouter)
 adminRouter.use(adminContentRouter)
+adminRouter.use(adminCustomersRouter)
 
 adminRouter.get('/me', (req, res) => {
   res.json({ admin: req.admin })

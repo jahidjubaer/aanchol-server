@@ -21,6 +21,7 @@ const heroSlideSchema = new mongoose.Schema(
     active: { type: Boolean, default: true },
     startsAt: Date,
     endsAt: Date,
+    sample: { type: Boolean, default: undefined }, // demo data, removed with npm run sample:remove
   },
   { timestamps: true },
 )
@@ -31,6 +32,7 @@ heroSlideSchema.set('toJSON', {
     ret.id = doc._id.toString()
     delete ret._id
     delete ret.createdAt
+    if (!ret.sample) delete ret.sample
     return ret
   },
 })
