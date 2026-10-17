@@ -1,0 +1,30 @@
+# Render Blueprint: Render reads this when you choose New → Blueprint and pick this repo.
+# Values marked sync: false are typed in once on the Render dashboard (they are secrets).
+services:
+  - type: web
+    name: aanchol-api
+    runtime: node
+    plan: free
+    region: singapore # closest Render region to Bangladesh
+    branch: main
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
