@@ -1,6 +1,16 @@
-import { DEFAULT_GIFT_WRAP, DEFAULT_MEMBER_TIERS, HOME_SECTIONS, MAX_ANNOUNCEMENTS, MAX_MEMBER_PERCENT, MAX_MEMBER_TIERS } from '../config/shop.js'
+import {
+  DEFAULT_GIFT_WRAP,
+  DEFAULT_MEMBER_TIERS,
+  DEFAULT_PAYMENTS,
+  HOME_SECTIONS,
+  MAX_ANNOUNCEMENTS,
+  MAX_MEMBER_PERCENT,
+  MAX_MEMBER_TIERS,
+  MOBILE_WALLETS,
+} from '../config/shop.js'
 import { SiteSettings } from '../models/SiteSettings.js'
 import { HttpError } from '../utils/httpError.js'
+import { normalizePhone } from '../utils/phone.js'
 import { onOff, optionalText, requiredText, validateInput, wholeNumber } from '../utils/validate.js'
 
 const SECTION_IDS = HOME_SECTIONS.map((s) => s.id)
@@ -48,6 +58,23 @@ const RULES = {
     const error = enabled.error ?? fee.error
     return error ? { error } : { value: { enabled: enabled.value, fee: fee.value } }
   },
+  // bKash and Nagad numbers customers send the advance to, and the advance when delivery is free.
+  payments: (v) => {
+    const value = {}
+    for (const wallet of MOBILE_WALLETS) {
+      const enabled = onOff(v?.[wallet]?.enabled)
+      if (enabled.error) return { error: enabled.error }
+      const raw = typeof v?.[wallet]?.number === 'string' ? v[wallet].number.trim() : ''
+      const number = raw ? normalizePhone(raw) : ''
+      const label = wallet === 'bkash' ? 'bKash' : 'Nagad'
+      if (raw && !number) return { error: `Enter the ${label} number like 01712345678.` }
+      if (enabled.value && !number) return { error: `Add the ${label} number before turning it on.` }
+      value[wallet] = { enabled: enabled.value, number }
+    }
+    const minAdvance = wholeNumber(0, 5000, 'The advance must be 0 to 5,000 taka.')(v?.minAdvance)
+    if (minAdvance.error) return { error: minAdvance.error }
+    return { value: { ...value, minAdvance: minAdvance.value } }
+  },
   homeSections: (v) => {
     if (!Array.isArray(v)) return { error: 'Must be a list.' }
     const ids = v.map((s) => s?.id)
@@ -58,6 +85,12 @@ const RULES = {
   },
 }
 
+function resolvePayments(saved) {
+  if (typeof saved?.minAdvance !== 'number') return DEFAULT_PAYMENTS
+  const wallet = (w) => ({ enabled: Boolean(saved[w]?.enabled && saved[w]?.number), number: saved[w]?.number ?? '' })
+  return { bkash: wallet('bkash'), nagad: wallet('nagad'), minAdvance: saved.minAdvance }
+}
+
 export async function getSettings() {
   const settings = await SiteSettings.findOne({ key: 'site' })
   return {
@@ -65,6 +98,7 @@ export async function getSettings() {
     homeSections: resolveHomeSections(settings?.homeSections),
     memberTiers: settings?.memberTiers?.length ? settings.memberTiers.map(({ name, min, percent }) => ({ name, min, percent })) : DEFAULT_MEMBER_TIERS,
     giftWrap: typeof settings?.giftWrap?.enabled === 'boolean' ? { enabled: settings.giftWrap.enabled, fee: settings.giftWrap.fee } : DEFAULT_GIFT_WRAP,
+    payments: resolvePayments(settings?.payments),
   }
 }
 

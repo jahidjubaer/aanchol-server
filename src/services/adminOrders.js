@@ -13,6 +13,8 @@ export function toAdminJSON(order) {
     adminNote: doc.adminNote ?? '',
     statusHistory: doc.statusHistory,
     next: ORDER_TRANSITIONS[doc.status],
+    paymentToCheck: paymentToCheck(doc),
+    ...(doc.payment?.verifiedBy ? { paymentVerifiedBy: doc.payment.verifiedBy } : {}),
     ...(doc.customerId ? { customerId: String(doc.customerId) } : {}),
     ...(doc.sample ? { sample: true } : {}),
   }
@@ -33,18 +35,24 @@ function searchFilter(q) {
   return { 'customer.name': { $regex: escapeRegex(term), $options: 'i' } }
 }
 
+// New orders whose bKash/Nagad advance hasn't been checked yet.
+const TO_CHECK = { status: 'pending', 'payment.advance': { $gt: 0 }, 'payment.verified': { $ne: true } }
+export const countPaymentsToCheck = () => Order.countDocuments(TO_CHECK)
+
 export async function listOrders({ status, q, page }) {
   const filter = { ...(typeof q === 'string' ? searchFilter(q) : {}) }
   if (ORDER_STATUSES.includes(status)) filter.status = status
+  if (status === 'payment') Object.assign(filter, TO_CHECK)
   const pageNumber = Math.max(1, Math.min(1000, Number.parseInt(page, 10) || 1))
 
-  const [orders, total, grouped] = await Promise.all([
+  const [orders, total, grouped, toCheck] = await Promise.all([
     Order.find(filter)
       .sort({ createdAt: -1 })
       .skip((pageNumber - 1) * PAGE_SIZE)
       .limit(PAGE_SIZE),
     Order.countDocuments(filter),
     Order.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }]),
+    countPaymentsToCheck(),
   ])
 
   const counts = Object.fromEntries(ORDER_STATUSES.map((s) => [s, 0]))
@@ -55,7 +63,7 @@ export async function listOrders({ status, q, page }) {
     total,
     page: pageNumber,
     pages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
-    counts,
+    counts: { ...counts, payment: toCheck },
   }
 }
 
@@ -65,10 +73,24 @@ export async function getOrder(orderNumber) {
   return order
 }
 
-export async function updateOrder(orderNumber, { status, adminNote }, admin) {
+// Whether the advance still has to be checked before the order can be confirmed.
+export const paymentToCheck = (order) => order.payment?.advance > 0 && !order.payment.verified
+
+export async function updateOrder(orderNumber, { status, adminNote, paymentVerified }, admin) {
   const order = await getOrder(orderNumber)
   const set = {}
   const update = { $set: set }
+
+  // The admin found the bKash/Nagad payment (TrxID) in the shop's account.
+  if (paymentVerified !== undefined) {
+    if (paymentVerified !== true) throw new HttpError(400, 'Send paymentVerified: true.')
+    if (!paymentToCheck(order)) throw new HttpError(409, 'There is no payment to check on this order.')
+    if (order.status === 'cancelled') throw new HttpError(409, 'This order was cancelled.')
+    set['payment.verified'] = true
+    set['payment.verifiedAt'] = new Date()
+    set['payment.verifiedBy'] = admin.email
+    if (order.payment.plan === 'full') set['payment.paid'] = true
+  }
 
   if (adminNote !== undefined) {
     if (typeof adminNote !== 'string') throw new HttpError(400, 'Note must be text.')
@@ -78,6 +100,9 @@ export async function updateOrder(orderNumber, { status, adminNote }, admin) {
   if (status !== undefined && status !== order.status) {
     if (!ORDER_TRANSITIONS[order.status].includes(status)) {
       throw new HttpError(409, `An order that is ${order.status} can't be marked ${status}.`)
+    }
+    if (status === 'confirmed' && paymentToCheck(order) && paymentVerified !== true) {
+      throw new HttpError(409, `Check the ${order.payment.method === 'bkash' ? 'bKash' : 'Nagad'} payment (TrxID ${order.payment.trxId}) before confirming.`)
     }
     set.status = status
     if (status === 'delivered') set['payment.paid'] = true // cash on delivery is collected on handover

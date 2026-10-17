@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { ORDER_STATUSES, PAYMENT_METHODS } from '../config/shop.js'
+import { ORDER_STATUSES, PAYMENT_METHODS, PAYMENT_PLANS } from '../config/shop.js'
 
 const orderItemSchema = new mongoose.Schema(
   {
@@ -43,7 +43,15 @@ const orderSchema = new mongoose.Schema(
     total: { type: Number, required: true },
     payment: {
       method: { type: String, enum: PAYMENT_METHODS, default: 'cod' },
-      paid: { type: Boolean, default: false },
+      // With bKash/Nagad: 'advance' (delivery charge now, rest on delivery) or 'full'.
+      plan: { type: String, enum: PAYMENT_PLANS },
+      advance: Number, // sent before delivery; the rest (total − advance) is collected on delivery
+      trxId: String, // the transaction ID from the customer's bKash/Nagad message
+      sender: String, // the number they sent from
+      verified: Boolean, // the admin found the payment in the shop's bKash/Nagad account
+      verifiedAt: Date,
+      verifiedBy: String,
+      paid: { type: Boolean, default: false }, // everything is paid
     },
     customer: {
       name: { type: String, required: true },
@@ -64,6 +72,11 @@ const orderSchema = new mongoose.Schema(
 )
 
 orderSchema.index({ createdAt: -1 })
+// A transaction ID pays for one order only.
+orderSchema.index(
+  { 'payment.method': 1, 'payment.trxId': 1 },
+  { unique: true, partialFilterExpression: { 'payment.trxId': { $type: 'string' } } },
+)
 
 // Public shape. The admin routes add adminNote and statusHistory themselves.
 orderSchema.set('toJSON', {
@@ -78,6 +91,7 @@ orderSchema.set('toJSON', {
     delete ret.sample
     ret.items = ret.items.map(({ product: _product, ...item }) => item)
     if (ret.giftCard?.code) ret.giftCard = { ...ret.giftCard, code: maskCode(ret.giftCard.code) }
+    if (ret.payment) delete ret.payment.verifiedBy
     return ret
   },
 })

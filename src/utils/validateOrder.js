@@ -1,4 +1,4 @@
-import { DELIVERY_OPTIONS, GIFT_MESSAGE_MAX, MAX_LINES_PER_ORDER, MAX_QTY_PER_LINE } from '../config/shop.js'
+import { DELIVERY_OPTIONS, GIFT_MESSAGE_MAX, MAX_LINES_PER_ORDER, MAX_QTY_PER_LINE, MOBILE_WALLETS, PAYMENT_PLANS } from '../config/shop.js'
 import { normalizePhone, PHONE_ERROR } from './phone.js'
 
 // Same rules as client/src/utils/checkout.js, plus the checks a browser can't be trusted with.
@@ -78,5 +78,23 @@ export function validateOrderInput(body) {
     else errors.giftCard = 'This gift card code is not valid. Check it and try again.'
   }
 
-  return { errors, value: { customer, delivery, items, expectedSubtotal, expectedTotal, giftWrap, giftCardCode } }
+  // { method: 'bkash' | 'nagad', plan: 'advance' | 'full', trxId, sender, amount } — the advance sent by
+  // Send Money. Whether it's needed (and how much) is decided in services/orders.js.
+  let payment
+  if (input.payment !== undefined && input.payment !== null) {
+    const p = isObject(input.payment) ? input.payment : {}
+    payment = {
+      method: MOBILE_WALLETS.includes(p.method) ? p.method : null,
+      plan: PAYMENT_PLANS.includes(p.plan) ? p.plan : null,
+      trxId: text(p.trxId, 30).toUpperCase().replace(/[\s-]/g, ''),
+      sender: normalizePhone(text(p.sender, 20)),
+      amount: Number.isInteger(p.amount) ? p.amount : undefined,
+    }
+    if (!payment.method) errors.paymentMethod = 'Choose bKash or Nagad.'
+    if (!payment.plan) errors.paymentPlan = 'Choose how much to pay now.'
+    if (!/^[A-Z0-9]{8,12}$/.test(payment.trxId)) errors.trxId = 'Enter the transaction ID from your payment message, e.g. 8N7A6B5C4D.'
+    if (!payment.sender) errors.sender = 'Enter the number you sent the money from.'
+  }
+
+  return { errors, value: { customer, delivery, items, expectedSubtotal, expectedTotal, giftWrap, giftCardCode, payment } }
 }

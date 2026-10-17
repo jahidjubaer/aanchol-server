@@ -23,6 +23,7 @@ siteRouter.get('/', async (_req, res) => {
     homeSections: settings.homeSections,
     memberTiers: settings.memberTiers,
     giftWrap: settings.giftWrap,
+    payments: settings.payments,
   })
 })
 

@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { countPaymentsToCheck } from '../services/adminOrders.js'
 import { getCustomerById } from '../services/customers.js'
 import {
   cancelGiftCard,
@@ -49,10 +50,10 @@ adminRewardsRouter.post('/stock-alerts/:id/done', async (req, res) => {
   res.status(204).end()
 })
 
-// Numbers for the admin tabs: gift cards waiting for payment, people to tell about restocks.
+// Numbers for the admin tabs: payments to check, gift cards waiting for payment, people to tell about restocks.
 adminRewardsRouter.get('/badges', async (_req, res) => {
-  const [giftCards, restock] = await Promise.all([countPendingGiftCards(), countReadyAlerts()])
-  res.json({ giftCards, restock })
+  const [giftCards, restock, payments] = await Promise.all([countPendingGiftCards(), countReadyAlerts(), countPaymentsToCheck()])
+  res.json({ giftCards, restock, payments })
 })
 
 adminRewardsRouter.get('/customers/:id/membership', async (req, res) => {

@@ -61,9 +61,9 @@ adminRouter.get('/orders/:orderNumber', async (req, res) => {
   res.json({ order: toAdminJSON(await getOrder(req.params.orderNumber)) })
 })
 
-// PATCH /api/admin/orders/AN-7KQ2MX  { status?: 'confirmed', adminNote?: '...' }
+// PATCH /api/admin/orders/AN-7KQ2MX  { status?: 'confirmed', adminNote?: '...', paymentVerified?: true }
 adminRouter.patch('/orders/:orderNumber', async (req, res) => {
-  const { status, adminNote } = req.body ?? {}
-  const order = await updateOrder(req.params.orderNumber, { status, adminNote }, req.admin)
+  const { status, adminNote, paymentVerified } = req.body ?? {}
+  const order = await updateOrder(req.params.orderNumber, { status, adminNote, paymentVerified }, req.admin)
   res.json({ order: toAdminJSON(order) })
 })

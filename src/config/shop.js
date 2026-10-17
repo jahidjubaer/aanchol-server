@@ -5,7 +5,14 @@ export const DELIVERY_OPTIONS = [
   { id: 'outside-dhaka', label: 'Outside Dhaka', eta: '2–5 days', fee: 150 },
 ]
 
-export const PAYMENT_METHODS = ['cod']
+// Cash on delivery, with an advance sent by bKash or Nagad "Send Money" to the shop's own number
+// (no payment gateway). To confirm an order the customer pays at least the delivery charge,
+// or minAdvance when delivery is free, or the whole amount. The admin checks each payment by hand.
+export const PAYMENT_METHODS = ['cod', 'bkash', 'nagad']
+export const MOBILE_WALLETS = ['bkash', 'nagad']
+export const PAYMENT_PLANS = ['advance', 'full']
+// Off until the admin enters the numbers; until then orders are plain cash on delivery.
+export const DEFAULT_PAYMENTS = { bkash: { enabled: false, number: '' }, nagad: { enabled: false, number: '' }, minAdvance: 120 }
 
 export const ORDER_STATUSES = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']
 
@@ -71,7 +78,7 @@ export const GIFT_CARD_MIN = 500
 export const GIFT_CARD_MAX = 50000
 export const GIFT_CARD_AMOUNTS = [1000, 2000, 3000, 5000, 10000]
 export const GIFT_CARD_MONTHS = 12 // valid for a year from activation
-export const GIFT_CARD_PAYMENTS = ['bkash', 'cash']
+export const GIFT_CARD_PAYMENTS = ['bkash', 'nagad', 'cash']
 
 // "Complete the look": pieces the admin pairs with a product.
 export const MAX_PAIRS = 6

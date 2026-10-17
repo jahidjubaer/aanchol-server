@@ -5,6 +5,7 @@ import { HttpError } from '../utils/httpError.js'
 import { makeOrderNumber } from '../utils/orderNumber.js'
 import { liveCategorySlugs } from './categories.js'
 import { findUsableCard, refundGiftCard, renameGiftCardUse, spendGiftCard } from './giftCards.js'
+import { enabledWallets, requiredAdvance } from './payments.js'
 import { deliveredSpend, memberDiscount, tierFor } from './membership.js'
 import { campaignApplies, getCurrentCampaign, priceFor } from './pricing.js'
 import { getSettings } from './siteSettings.js'
@@ -34,8 +35,39 @@ export function releaseStock(lines) {
   return Promise.all(lines.map((l) => Product.updateOne({ _id: l.product._id }, { $inc: { stock: l.qty } })))
 }
 
+const TRX_USED = new HttpError(409, 'This transaction ID has already been used for an order.', {
+  fields: { trxId: 'This transaction ID has already been used for an order. Check the message from bKash or Nagad.' },
+})
+
+// With bKash/Nagad switched on in the admin, an order needs an advance (the delivery charge, at least
+// minAdvance, or everything). Nothing is needed when a gift card covers the whole order.
+async function checkPayment({ payment, toPay, deliveryFee, settings }) {
+  const wallets = enabledWallets(settings.payments)
+  if (!wallets.length) return { method: 'cod', paid: toPay === 0 }
+  if (toPay === 0) return { method: 'cod', paid: true }
+
+  if (!payment) {
+    throw new HttpError(400, 'Please send the advance by bKash or Nagad to confirm your order.', {
+      fields: { paymentMethod: 'Choose bKash or Nagad.' },
+    })
+  }
+  if (!wallets.includes(payment.method)) {
+    throw new HttpError(400, 'Please check your payment.', { fields: { paymentMethod: 'That option is not available right now. Choose another.' } })
+  }
+  const advance = payment.plan === 'full' ? toPay : requiredAdvance(toPay, deliveryFee, settings.payments.minAdvance)
+  // The checkout showed a different amount to send (e.g. the advance was changed meanwhile).
+  if (payment.amount !== undefined && payment.amount !== advance) {
+    throw new HttpError(409, 'The amount to pay now has changed. Please check it and send the right amount.', {
+      code: 'PRICE_CHANGED',
+      advance,
+    })
+  }
+  if (await Order.exists({ 'payment.method': payment.method, 'payment.trxId': payment.trxId })) throw TRX_USED
+  return { method: payment.method, plan: payment.plan, advance, trxId: payment.trxId, sender: payment.sender, verified: false, paid: false }
+}
+
 // account: the signed-in customer, if any (their membership level gives the member discount).
-export async function createOrder({ customer, delivery, items, expectedSubtotal, expectedTotal, giftWrap, giftCardCode, account }) {
+export async function createOrder({ customer, delivery, items, expectedSubtotal, expectedTotal, giftWrap, giftCardCode, payment, account }) {
   const [products, campaign, settings, spent] = await Promise.all([
     liveCategorySlugs().then((live) =>
       Product.find({ slug: { $in: items.map((i) => i.slug) }, active: true, category: { $in: live } }),
@@ -92,6 +124,9 @@ export async function createOrder({ customer, delivery, items, expectedSubtotal,
   const card = giftCardCode ? await findUsableCard(giftCardCode) : null
   const fromCard = card ? Math.min(card.balance, beforeCard) : 0
 
+  const toPay = beforeCard - fromCard
+  const paymentRecord = await checkPayment({ payment, toPay, deliveryFee: delivery.fee, settings })
+
   const reserved = await reserveStock(lines)
   const discounted = lines.some((l) => campaignApplies(campaign, l.product))
   const orderId = new mongoose.Types.ObjectId()
@@ -125,8 +160,8 @@ export async function createOrder({ customer, delivery, items, expectedSubtotal,
     ...(wrap ? { giftWrap: wrap } : {}),
     ...(fromCard > 0 ? { giftCard: { code: card.code, amount: fromCard } } : {}),
     delivery: { id: delivery.id, label: delivery.label, eta: delivery.eta, fee: delivery.fee },
-    total: beforeCard - fromCard,
-    payment: { method: 'cod', paid: false },
+    total: toPay,
+    payment: paymentRecord,
     customer,
     ...(account ? { customerId: account._id } : {}),
   }
@@ -143,6 +178,7 @@ export async function createOrder({ customer, delivery, items, expectedSubtotal,
         continue
       }
       await undo()
+      if (err?.code === 11000 && err.keyPattern?.['payment.trxId']) throw TRX_USED
       throw err
     }
   }
