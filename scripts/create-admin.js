@@ -1,29 +1,51 @@
 // npm run create-admin  →  asks for email, name and password, then creates the admin
 // in the database in MONGODB_URI. Running it again for the same email resets the password.
 import { createInterface } from 'node:readline/promises'
+import { Writable } from 'node:stream'
 import { env } from '../src/config/env.js'
 import { connectDb, disconnectDb } from '../src/db.js'
 import { upsertAdmin } from '../src/seed/admins.js'
 
-const rl = createInterface({ input: process.stdin, output: process.stdout })
+// Output goes through this stream so typing can be hidden while a password is entered.
+let hidden = false
+const output = new Writable({
+  write(chunk, encoding, done) {
+    if (!hidden) process.stdout.write(chunk, encoding)
+    done()
+  },
+})
 
-// Prints * for each character typed, so the password isn't shown on screen.
-async function askHidden(question) {
-  const write = rl._writeToOutput.bind(rl)
-  rl._writeToOutput = (s) => write(s.startsWith(question) ? s : s.replace(/[^\r\n]/g, '*'))
-  const answer = await rl.question(question)
-  rl._writeToOutput = write
-  return answer
+const rl = createInterface({ input: process.stdin, output, terminal: Boolean(process.stdin.isTTY) })
+
+async function ask(question) {
+  process.stdout.write(question)
+  return rl.question('')
 }
 
-const email = await rl.question('Admin email: ')
-const name = await rl.question('Name (shown in the admin): ')
-const password = await askHidden('Password (10+ characters): ')
-const repeat = await askHidden('Repeat password: ')
+// Nothing is shown on screen while the password is typed.
+async function askHidden(question) {
+  process.stdout.write(`${question}(hidden) `)
+  hidden = true
+  try {
+    return await rl.question('')
+  } finally {
+    hidden = false
+    process.stdout.write('\n')
+  }
+}
+
+const email = (await ask('Admin email: ')).trim()
+const name = (await ask('Name (shown in the admin): ')).trim()
+const password = await askHidden('Password, 10+ characters ')
+const repeat = await askHidden('Repeat password ')
 rl.close()
 
 if (password !== repeat) {
-  console.error('Passwords do not match.')
+  console.error('Passwords do not match. Nothing was saved, please run it again.')
+  process.exit(1)
+}
+if (password.length < 10) {
+  console.error(`Password is ${password.length} characters; it needs at least 10. Nothing was saved.`)
   process.exit(1)
 }
 

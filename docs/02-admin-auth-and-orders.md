@@ -7,7 +7,7 @@ _Date: 2026-10-17_
 ### Admin accounts
 - `Admin` model: email, name, `passwordHash`, `active`, `lastLoginAt`.
 - **Passwords:** hashed with **scrypt** (built into Node), stored as `salt:hash`. The plain password is never stored or returned.
-- **`npm run create-admin`:** asks for email, name and password (hidden as `*`), then creates the admin in the database in `MONGODB_URI`. Running it again with the same email **resets the password**.
+- **`npm run create-admin`:** asks for email, name and password (nothing is shown while the password is typed), then creates the admin in the database in `MONGODB_URI`. Running it again with the same email **resets the password**.
 - **Deactivating an admin:** set `active: false` in the database. Their session stops working at the next request.
 
 ### Login: `POST /api/admin/login`
@@ -47,3 +47,9 @@ _Date: 2026-10-17_
 - `npm test`: **24 tests**, all passing (12 new in `test/admin.test.js`):
   - **Login:** wrong passwords and forged, garbage or other-secret tokens are refused; a deactivated admin is logged out.
   - **Orders:** search, status steps (including refusing skipped steps), stock coming back exactly once when 3 cancels arrive together, and the private note staying private.
+
+## Fix (2026-10-17): `create-admin` crashed on Node 23
+- **Problem:** the script crashed at the password step with `Cannot read properties of undefined (reading 'bind')`. It relied on a hidden readline function that Node 23 no longer has.
+- **Fix:** the password is now hidden with a plain output stream, which works on every Node version.
+- **Checks before saving:** the script now checks the password before connecting to the database. A mismatch or a password under 10 characters stops with a clear message and saves nothing.
+- **Tested** against an in-memory database: a correct password creates the admin, and a short or mismatched one saves nothing.
