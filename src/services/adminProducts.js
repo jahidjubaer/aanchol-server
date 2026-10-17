@@ -2,7 +2,9 @@ import { randomInt } from 'node:crypto'
 import { Order } from '../models/Order.js'
 import { Product } from '../models/Product.js'
 import { HttpError } from '../utils/httpError.js'
+import { toUpdate } from '../utils/validate.js'
 import { slugify, validateProductInput } from '../utils/validateProduct.js'
+import { checkProductCategory } from './categories.js'
 
 // The admin also sees hidden products and when they were last changed.
 export function toAdminProductJSON(product) {
@@ -16,6 +18,15 @@ function checkPrices({ price, compareAt }) {
     })
   }
 }
+
+// Field errors and the category check, reported together so the form shows every problem at once.
+async function checkFields(errors, category, type) {
+  if (!errors.category && category !== undefined) Object.assign(errors, await checkProductCategory(category, errors.type ? '' : type))
+  if (Object.keys(errors).length) throw new HttpError(400, 'Please check the product.', { fields: errors })
+}
+
+// An empty type means "no type", so it's removed rather than saved as "".
+const dropEmptyType = (value) => (value.type === '' ? { ...value, type: undefined } : value)
 
 async function uniqueSlug(name) {
   const base = slugify(name) || 'product'
@@ -40,31 +51,24 @@ export async function getAdminProduct(slug) {
 
 export async function createProduct(body) {
   const { errors, value } = validateProductInput(body)
-  if (Object.keys(errors).length) throw new HttpError(400, 'Please check the product.', { fields: errors })
+  await checkFields(errors, value.category, value.type)
   checkPrices(value)
-  return Product.create({ ...value, slug: await uniqueSlug(value.name) })
+  const { type, ...rest } = value
+  return Product.create({ ...rest, ...(type ? { type } : {}), slug: await uniqueSlug(value.name) })
 }
 
 export async function updateProduct(slug, body) {
   const product = await getAdminProduct(slug)
   const { errors, value } = validateProductInput(body, { partial: true })
-  if (Object.keys(errors).length) throw new HttpError(400, 'Please check the product.', { fields: errors })
-
+  const touchesCategory = 'category' in value || 'type' in value
+  await checkFields(
+    errors,
+    touchesCategory ? (value.category ?? product.category) : undefined,
+    'type' in value ? value.type : product.type,
+  )
   checkPrices({ price: value.price ?? product.price, compareAt: 'compareAt' in value ? value.compareAt : product.compareAt })
 
-  const unset = {}
-  for (const [key, v] of Object.entries(value)) {
-    if (v === undefined) {
-      unset[key] = 1 // e.g. old price removed
-      delete value[key]
-    }
-  }
-  const updated = await Product.findByIdAndUpdate(
-    product._id,
-    { $set: value, ...(Object.keys(unset).length ? { $unset: unset } : {}) },
-    { returnDocument: 'after', runValidators: true },
-  )
-  return updated
+  return Product.findByIdAndUpdate(product._id, toUpdate(dropEmptyType(value)), { returnDocument: 'after', runValidators: true })
 }
 
 // Products that were ever ordered can only be hidden, so old orders still make sense.

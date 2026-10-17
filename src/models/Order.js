@@ -6,7 +6,8 @@ const orderItemSchema = new mongoose.Schema(
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     slug: { type: String, required: true },
     name: { type: String, required: true },
-    price: { type: Number, required: true }, // price at the time of the order
+    price: { type: Number, required: true }, // price paid per piece at the time of the order
+    listPrice: Number, // the full price, when a campaign discount was applied
     qty: { type: Number, required: true, min: 1 },
   },
   { _id: false },
@@ -26,6 +27,7 @@ const orderSchema = new mongoose.Schema(
     orderNumber: { type: String, required: true, unique: true },
     items: { type: [orderItemSchema], required: true },
     subtotal: { type: Number, required: true },
+    campaign: { name: String, title: String, percentOff: Number }, // the sale applied, if any
     delivery: {
       id: { type: String, required: true },
       label: String,

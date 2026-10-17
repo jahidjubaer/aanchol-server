@@ -6,6 +6,7 @@ const productSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     nameBangla: { type: String, trim: true },
     category: { type: String, required: true, index: true },
+    type: { type: String }, // one of the category's types, e.g. "wood"
     origin: String,
     fabric: String,
     count: Number,
@@ -15,6 +16,7 @@ const productSchema = new mongoose.Schema(
     badge: String,
     images: { type: [String], default: [] },
     colors: { base: String, motif: String },
+    details: { type: [{ label: String, value: String, _id: false }], default: undefined },
     description: String,
     weavingTime: String,
     weaver: String,

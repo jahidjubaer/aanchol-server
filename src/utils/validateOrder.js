@@ -49,5 +49,12 @@ export function validateOrderInput(body) {
       errors.items = 'That is more than we can take in one order. Please contact us on WhatsApp.'
   }
 
-  return { errors, value: { customer, delivery, items } }
+  // The subtotal the customer saw. Optional, so older pages still work.
+  let expectedSubtotal
+  if (input.expectedSubtotal !== undefined) {
+    if (Number.isInteger(input.expectedSubtotal) && input.expectedSubtotal >= 0) expectedSubtotal = input.expectedSubtotal
+    else errors.items = 'Your bag has an invalid total. Please refresh and try again.'
+  }
+
+  return { errors, value: { customer, delivery, items, expectedSubtotal } }
 }

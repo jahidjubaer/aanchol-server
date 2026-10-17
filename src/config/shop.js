@@ -21,6 +21,25 @@ export const ORDER_TRANSITIONS = {
 export const MAX_LINES_PER_ORDER = 10
 export const MAX_QTY_PER_LINE = 5
 
-// Product categories the admin can choose. Keep in sync with client/src/data/collections.js.
-export const PRODUCT_CATEGORIES = ['jamdani', 'jewellery']
+// Product categories live in the database (models/Category.js) and are managed in the admin.
+export const CATEGORY_STATUSES = ['live', 'coming-soon', 'hidden']
+// saree: the product form shows fabric, thread count, weaver. general: free-form detail rows instead.
+export const CATEGORY_TEMPLATES = ['saree', 'general']
+export const MAX_CATEGORY_TYPES = 12
+
 export const MAX_PRODUCT_IMAGES = 8
+export const MAX_PRODUCT_DETAILS = 10
+
+// Home page sections after the hero, in their default order. The admin can reorder and hide them.
+export const HOME_SECTIONS = [
+  { id: 'promise-strip', label: 'Promise strip (delivery, COD, handwoven)' },
+  { id: 'featured', label: 'New from the loom (latest products)' },
+  { id: 'categories', label: 'Shop by craft (categories)' },
+  { id: 'craft', label: 'Craft story' },
+  { id: 'promises', label: 'Our promises' },
+]
+export const MAX_ANNOUNCEMENTS = 3
+export const MAX_HERO_SLIDES = 8
+
+// A campaign can take at most this much off. Anything bigger is almost certainly a typo.
+export const MAX_PERCENT_OFF = 70

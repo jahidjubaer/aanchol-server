@@ -2,6 +2,8 @@ import { Order } from '../models/Order.js'
 import { Product } from '../models/Product.js'
 import { HttpError } from '../utils/httpError.js'
 import { makeOrderNumber } from '../utils/orderNumber.js'
+import { liveCategorySlugs } from './categories.js'
+import { campaignApplies, getCurrentCampaign, priceFor } from './pricing.js'
 
 // Takes stock only while enough is left, so two people can't both buy the last sari.
 // Reserved stock is put back if a later step fails.
@@ -28,8 +30,13 @@ export function releaseStock(lines) {
   return Promise.all(lines.map((l) => Product.updateOne({ _id: l.product._id }, { $inc: { stock: l.qty } })))
 }
 
-export async function createOrder({ customer, delivery, items }) {
-  const products = await Product.find({ slug: { $in: items.map((i) => i.slug) }, active: true })
+export async function createOrder({ customer, delivery, items, expectedSubtotal }) {
+  const [products, campaign] = await Promise.all([
+    liveCategorySlugs().then((live) =>
+      Product.find({ slug: { $in: items.map((i) => i.slug) }, active: true, category: { $in: live } }),
+    ),
+    getCurrentCampaign(),
+  ])
   const bySlug = new Map(products.map((p) => [p.slug, p]))
 
   const problems = items
@@ -41,13 +48,34 @@ export async function createOrder({ customer, delivery, items }) {
     })
   }
 
-  const lines = items.map((i) => ({ product: bySlug.get(i.slug), qty: i.qty }))
-  const reserved = await reserveStock(lines)
+  const lines = items.map((i) => {
+    const product = bySlug.get(i.slug)
+    return { product, qty: i.qty, price: priceFor(product, campaign) }
+  })
+  const subtotal = lines.reduce((sum, l) => sum + l.price * l.qty, 0)
 
-  const subtotal = lines.reduce((sum, l) => sum + l.product.price * l.qty, 0)
+  // The bag showed a different total, e.g. a sale ended while checking out. Nothing is charged
+  // until the customer has seen the new prices.
+  if (expectedSubtotal !== undefined && expectedSubtotal !== subtotal) {
+    throw new HttpError(409, 'Prices have changed since you opened your bag. Please check the new total.', {
+      code: 'PRICE_CHANGED',
+      subtotal,
+    })
+  }
+
+  const reserved = await reserveStock(lines)
+  const discounted = lines.some((l) => campaignApplies(campaign, l.product))
   const order = {
-    items: lines.map((l) => ({ product: l.product._id, slug: l.product.slug, name: l.product.name, price: l.product.price, qty: l.qty })),
+    items: lines.map((l) => ({
+      product: l.product._id,
+      slug: l.product.slug,
+      name: l.product.name,
+      price: l.price,
+      ...(l.price !== l.product.price ? { listPrice: l.product.price } : {}),
+      qty: l.qty,
+    })),
     subtotal,
+    ...(discounted ? { campaign: { name: campaign.name, title: campaign.title, percentOff: campaign.percentOff } } : {}),
     delivery: { id: delivery.id, label: delivery.label, eta: delivery.eta, fee: delivery.fee },
     total: subtotal + delivery.fee,
     payment: { method: 'cod', paid: false },
