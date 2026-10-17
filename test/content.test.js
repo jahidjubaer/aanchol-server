@@ -65,7 +65,16 @@ beforeEach(async () => {
 describe('site', () => {
   it('starts with the default categories, slides and home layout', async () => {
     const res = await request(app).get('/api/site').expect(200)
-    assert.deepEqual(res.body.categories.map((c) => [c.slug, c.status]), [['jamdani', 'live'], ['jewellery', 'coming-soon']])
+    assert.deepEqual(res.body.categories.map((c) => [c.slug, c.status]), [
+      ['jamdani', 'live'],
+      ['jewellery', 'coming-soon'],
+      ['sarees', 'coming-soon'],
+      ['three-piece', 'coming-soon'],
+      ['orna-shawls', 'coming-soon'],
+      ['nakshi-kantha', 'coming-soon'],
+    ])
+    // Upcoming lines stay out of the menu until the admin turns them on.
+    assert.deepEqual(res.body.categories.filter((c) => c.inNav).map((c) => c.slug), ['jamdani', 'jewellery'])
     assert.equal(res.body.slides.length, 2)
     assert.ok(res.body.slides[0].id)
     assert.equal(res.body.campaign, null)

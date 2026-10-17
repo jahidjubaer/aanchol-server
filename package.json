@@ -15,7 +15,8 @@
     "create-admin": "node --env-file-if-exists=.env scripts/create-admin.js",
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
     "sample:add": "node --env-file-if-exists=.env scripts/sample.js add",
-    "sample:remove": "node --env-file-if-exists=.env scripts/sample.js remove"
+    "sample:remove": "node --env-file-if-exists=.env scripts/sample.js remove",
+    "categories:add": "node --env-file-if-exists=.env scripts/categories.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
