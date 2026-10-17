@@ -8,8 +8,12 @@ function required(name) {
 export const env = {
   port: Number(process.env.PORT) || 4000,
   isProduction: process.env.NODE_ENV === 'production',
-  // Comma-separated list, e.g. "http://localhost:5173,https://aanchol.com"
-  clientOrigins: (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(',').map((o) => o.trim()),
+  // Comma-separated list, e.g. "http://localhost:5173,https://aanchol.com". A trailing slash is
+  // ignored: browsers send the origin without one, so "https://aanchol.com/" would never match.
+  clientOrigins: (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean),
   mongoUri: () => required('MONGODB_URI'),
   jwtSecret: () => {
     const secret = required('JWT_SECRET')
