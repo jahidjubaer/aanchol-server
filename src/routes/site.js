@@ -21,6 +21,8 @@ siteRouter.get('/', async (_req, res) => {
     campaign: campaign && publicCampaign(campaign),
     announcement: settings.announcement,
     homeSections: settings.homeSections,
+    memberTiers: settings.memberTiers,
+    giftWrap: settings.giftWrap,
   })
 })
 

@@ -16,6 +16,8 @@ import {
   updateAddress,
   updateProfile,
 } from '../services/customers.js'
+import { listCustomerGiftCards } from '../services/giftCards.js'
+import { getMembership } from '../services/membership.js'
 
 export const accountRouter = Router()
 
@@ -83,6 +85,16 @@ accountRouter.put('/wishlist', async (req, res) => {
 })
 accountRouter.post('/wishlist/merge', async (req, res) => {
   res.json({ wishlist: await mergeWishlist(req.customer, req.body?.wishlist) })
+})
+
+// Level, spend, progress to the next level and the card number.
+accountRouter.get('/membership', async (req, res) => {
+  res.json({ membership: await getMembership(req.customer) })
+})
+
+// Gift cards this customer ordered, with their codes once paid for.
+accountRouter.get('/gift-cards', async (req, res) => {
+  res.json({ giftCards: await listCustomerGiftCards(req.customer) })
 })
 
 accountRouter.get('/orders', async (req, res) => {

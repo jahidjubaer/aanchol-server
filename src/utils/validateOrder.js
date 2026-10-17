@@ -1,4 +1,4 @@
-import { DELIVERY_OPTIONS, MAX_LINES_PER_ORDER, MAX_QTY_PER_LINE } from '../config/shop.js'
+import { DELIVERY_OPTIONS, GIFT_MESSAGE_MAX, MAX_LINES_PER_ORDER, MAX_QTY_PER_LINE } from '../config/shop.js'
 import { normalizePhone, PHONE_ERROR } from './phone.js'
 
 // Same rules as client/src/utils/checkout.js, plus the checks a browser can't be trusted with.
@@ -56,5 +56,27 @@ export function validateOrderInput(body) {
     else errors.items = 'Your bag has an invalid total. Please refresh and try again.'
   }
 
-  return { errors, value: { customer, delivery, items, expectedSubtotal } }
+  // The total before any gift card, as checkout showed it (member discount, delivery and gift wrap included).
+  let expectedTotal
+  if (input.expectedTotal !== undefined) {
+    if (Number.isInteger(input.expectedTotal) && input.expectedTotal >= 0) expectedTotal = input.expectedTotal
+    else errors.items = 'Your bag has an invalid total. Please refresh and try again.'
+  }
+
+  // { message } to gift wrap the order; the message goes on a card inside.
+  let giftWrap
+  if (input.giftWrap) {
+    const message = isObject(input.giftWrap) ? (input.giftWrap.message ?? '') : null
+    if (typeof message !== 'string') errors.giftWrap = 'Please check the gift message.'
+    else if (message.trim().length > GIFT_MESSAGE_MAX) errors.giftWrap = `Keep the message under ${GIFT_MESSAGE_MAX} characters.`
+    else giftWrap = { message: message.trim() }
+  }
+
+  let giftCardCode
+  if (input.giftCard !== undefined && input.giftCard !== '' && input.giftCard !== null) {
+    if (typeof input.giftCard === 'string' && input.giftCard.length <= 30) giftCardCode = input.giftCard
+    else errors.giftCard = 'This gift card code is not valid. Check it and try again.'
+  }
+
+  return { errors, value: { customer, delivery, items, expectedSubtotal, expectedTotal, giftWrap, giftCardCode } }
 }

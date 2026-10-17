@@ -27,6 +27,9 @@ const customerSchema = new mongoose.Schema(
     resetTokenHash: String,
     resetExpires: Date,
     lastLoginAt: Date,
+    // Given the first time the customer reaches a membership level; shown on their card.
+    memberNo: { type: String, unique: true, sparse: true },
+    memberSince: Date,
     sample: { type: Boolean, default: undefined }, // demo data, removed with npm run sample:remove
   },
   { timestamps: true },

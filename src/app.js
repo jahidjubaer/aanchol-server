@@ -6,6 +6,7 @@ import { env } from './config/env.js'
 import { errorHandler, notFound } from './middleware/errors.js'
 import { accountRouter } from './routes/account.js'
 import { adminRouter } from './routes/admin.js'
+import { giftCardsRouter } from './routes/giftCards.js'
 import { ordersRouter } from './routes/orders.js'
 import { productsRouter } from './routes/products.js'
 import { siteRouter } from './routes/site.js'
@@ -26,6 +27,7 @@ export function createApp() {
   app.use('/api/products', productsRouter)
   app.use('/api/orders', ordersRouter)
   app.use('/api/account', accountRouter)
+  app.use('/api/gift-cards', giftCardsRouter)
   app.use('/api/admin', adminRouter)
 
   app.use(notFound)

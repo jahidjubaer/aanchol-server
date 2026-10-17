@@ -1,4 +1,4 @@
-import { MAX_PRODUCT_DETAILS, MAX_PRODUCT_IMAGES } from '../config/shop.js'
+import { MAX_PAIRS, MAX_PRODUCT_DETAILS, MAX_PRODUCT_IMAGES } from '../config/shop.js'
 import {
   date,
   isImageUrl,
@@ -55,6 +55,12 @@ const RULES = {
     return { value: rows }
   },
   description: optionalText(2000),
+  // "Complete the look": other pieces shown with this one. Missing or sold-out ones are skipped by the shop.
+  pairsWith: (v) => {
+    if (!Array.isArray(v) || !v.every((s) => typeof s === 'string' && SLUG.test(s))) return { error: 'Choose pieces from the list.' }
+    const slugs = [...new Set(v)]
+    return slugs.length > MAX_PAIRS ? { error: `Up to ${MAX_PAIRS} pieces.` } : { value: slugs }
+  },
   weavingTime: optionalText(50),
   weaver: optionalText(120),
   stock: wholeNumber(0, 999, 'Stock must be a whole number from 0.'),

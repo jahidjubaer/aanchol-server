@@ -19,7 +19,7 @@ if (command === 'add') {
   console.log(`Sample customer login: ${result.customerPhone} / ${result.customerPassword}`)
 } else if (command === 'remove') {
   const r = await removeSampleData()
-  console.log(`Removed ${r.products} products, ${r.orders} orders, ${r.customers} customers, ${r.campaigns} campaigns (all sample).`)
+  console.log(`Removed ${r.products} products, ${r.orders} orders, ${r.customers} customers, ${r.campaigns} campaigns, ${r.giftCards} gift cards (all sample).`)
 } else {
   console.log('Use: npm run sample:add  or  npm run sample:remove')
 }

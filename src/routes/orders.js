@@ -21,6 +21,6 @@ const orderLimiter = rateLimit({
 ordersRouter.post('/', orderLimiter, optionalCustomer, async (req, res) => {
   const { errors, value } = validateOrderInput(req.body)
   if (Object.keys(errors).length) throw new HttpError(400, 'Please check your details.', { fields: errors })
-  const order = await createOrder({ ...value, customerId: req.customer?._id })
+  const order = await createOrder({ ...value, account: req.customer })
   res.status(201).json({ order })
 })

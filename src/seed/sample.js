@@ -2,11 +2,13 @@ import { randomBytes } from 'node:crypto'
 import { Campaign } from '../models/Campaign.js'
 import { Category } from '../models/Category.js'
 import { Customer } from '../models/Customer.js'
+import { GiftCard } from '../models/GiftCard.js'
 import { Order } from '../models/Order.js'
 import { Product } from '../models/Product.js'
 import { SiteSettings } from '../models/SiteSettings.js'
+import { StockAlert } from '../models/StockAlert.js'
 import { hashPassword } from '../utils/password.js'
-import { makeOrderNumber } from '../utils/orderNumber.js'
+import { makeGiftCode, makeGiftReference, makeOrderNumber } from '../utils/orderNumber.js'
 import { ensureDefaultCategories } from './content.js'
 
 // Demo data so every page has something to show while real products are being photographed.
@@ -38,6 +40,7 @@ export const sampleProducts = [
     weavingTime: 'About 3 weeks',
     weaver: 'Weaving cooperative, Tangail',
     stock: 3,
+    pairsWith: ['sample-mango-wood-jhumka', 'sample-terracotta-bala-set', 'sample-shapla-carved-pendant'],
     addedOn: daysAgo(2),
   }),
   jamdani({
@@ -256,13 +259,54 @@ export async function addSampleData({ campaignLive = false, customerPassword } =
     sample: true,
   })
 
+  // One gift card waiting for payment, one active with part of it spent.
+  const yearFromNow = new Date(now + 365 * DAY)
+  await GiftCard.insertMany([
+    {
+      reference: makeGiftReference(),
+      amount: 3000,
+      balance: 3000,
+      status: 'pending',
+      buyer: { name: 'Farzana Rahman (sample)', phone: '01100000101' },
+      recipient: { name: 'Mitu (sample)', phone: '01100000102' },
+      message: 'Happy birthday! Pick something beautiful. (sample)',
+      payment: { method: 'bkash', paid: false },
+      createdBy: 'customer',
+      sample: true,
+    },
+    {
+      reference: makeGiftReference(),
+      code: makeGiftCode(),
+      amount: 5000,
+      balance: 2000,
+      status: 'active',
+      buyer: { name: 'Sample Customer', phone: SAMPLE_CUSTOMER_PHONE },
+      recipient: { name: 'Sample Customer', phone: SAMPLE_CUSTOMER_PHONE },
+      message: 'Eid gift (sample)',
+      payment: { method: 'cash', paid: true },
+      customerId: customer._id,
+      createdBy: 'customer',
+      activatedAt: daysAgo(10),
+      expiresAt: yearFromNow,
+      uses: [{ orderNumber: 'AN-SAMPLE', amount: 3000, at: daysAgo(5) }],
+      sample: true,
+    },
+  ])
+
+  // People waiting for the sold-out pieces.
+  await StockAlert.insertMany([
+    { product: 'sample-nil-akash-jamdani', phone: '01100000103', name: 'Shirin (sample)', sample: true },
+    { product: 'sample-nil-akash-jamdani', phone: SAMPLE_CUSTOMER_PHONE, name: 'Sample Customer', customerId: customer._id, sample: true },
+    { product: 'sample-kodom-wood-earrings', phone: '01100000104', name: 'Rupa (sample)', sample: true },
+  ])
+
   return { products: products.length, orders: orders.length, customerPhone: SAMPLE_CUSTOMER_PHONE, customerPassword: password, campaignLive }
 }
 
 // Removes every sample document and puts the jewellery category back to how it was.
 export async function removeSampleData({ keepCategoryState = false } = {}) {
-  const [products, orders, customers, campaigns] = await Promise.all(
-    [Product, Order, Customer, Campaign].map((m) => m.deleteMany({ sample: true })),
+  const [products, orders, customers, campaigns, giftCards] = await Promise.all(
+    [Product, Order, Customer, Campaign, GiftCard, StockAlert].map((m) => m.deleteMany({ sample: true })),
   )
   if (!keepCategoryState) {
     const settings = await SiteSettings.findOne({ key: 'site' })
@@ -275,5 +319,6 @@ export async function removeSampleData({ keepCategoryState = false } = {}) {
     orders: orders.deletedCount,
     customers: customers.deletedCount,
     campaigns: campaigns.deletedCount,
+    giftCards: giftCards.deletedCount,
   }
 }

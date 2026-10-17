@@ -49,3 +49,29 @@ export const MIN_PASSWORD = 8
 export const MAX_ADDRESSES = 5
 export const MAX_WISHLIST = 100
 export const RESET_LINK_HOURS = 24
+
+// Membership: a level is reached by what a customer has spent on delivered orders, all time
+// (goods only, after discounts; delivery and gift wrap don't count). The admin can edit the levels.
+// The member discount comes off the sale price during a campaign.
+export const DEFAULT_MEMBER_TIERS = [
+  { name: 'Silver', min: 5000, percent: 3 },
+  { name: 'Gold', min: 10000, percent: 5 },
+  { name: 'Platinum', min: 20000, percent: 8 },
+  { name: 'Diamond', min: 30000, percent: 12 },
+]
+export const MAX_MEMBER_TIERS = 6
+export const MAX_MEMBER_PERCENT = 20 // anything above is almost certainly a typo
+
+// Gift wrap with a handwritten message. The admin sets the fee or switches it off.
+export const DEFAULT_GIFT_WRAP = { enabled: true, fee: 100 }
+export const GIFT_MESSAGE_MAX = 200
+
+// Gift cards are ordered online and paid by bKash or cash; the admin activates them once paid.
+export const GIFT_CARD_MIN = 500
+export const GIFT_CARD_MAX = 50000
+export const GIFT_CARD_AMOUNTS = [1000, 2000, 3000, 5000, 10000]
+export const GIFT_CARD_MONTHS = 12 // valid for a year from activation
+export const GIFT_CARD_PAYMENTS = ['bkash', 'cash']
+
+// "Complete the look": pieces the admin pairs with a product.
+export const MAX_PAIRS = 6

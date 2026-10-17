@@ -20,6 +20,7 @@ const productSchema = new mongoose.Schema(
     description: String,
     weavingTime: String,
     weaver: String,
+    pairsWith: { type: [String], default: undefined }, // "Complete the look": slugs chosen in the admin
     stock: { type: Number, required: true, min: 0, default: 0 },
     addedOn: { type: Date, default: Date.now },
     active: { type: Boolean, default: true },

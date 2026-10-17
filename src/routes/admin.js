@@ -5,6 +5,7 @@ import { Admin } from '../models/Admin.js'
 import { adminContentRouter } from './adminContent.js'
 import { adminCustomersRouter } from './adminCustomers.js'
 import { adminProductsRouter } from './adminProducts.js'
+import { adminRewardsRouter } from './adminRewards.js'
 import { getOrder, listOrders, toAdminJSON, updateOrder } from '../services/adminOrders.js'
 import { HttpError } from '../utils/httpError.js'
 import { verifyPassword } from '../utils/password.js'
@@ -44,6 +45,7 @@ adminRouter.use(requireAdmin)
 adminRouter.use(adminProductsRouter)
 adminRouter.use(adminContentRouter)
 adminRouter.use(adminCustomersRouter)
+adminRouter.use(adminRewardsRouter)
 
 adminRouter.get('/me', (req, res) => {
   res.json({ admin: req.admin })

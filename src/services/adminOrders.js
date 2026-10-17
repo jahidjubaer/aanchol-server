@@ -1,6 +1,7 @@
 import { ORDER_STATUSES, ORDER_TRANSITIONS } from '../config/shop.js'
 import { Order } from '../models/Order.js'
 import { HttpError } from '../utils/httpError.js'
+import { refundGiftCard } from './giftCards.js'
 import { releaseStock } from './orders.js'
 
 const PAGE_SIZE = 20
@@ -91,6 +92,7 @@ export async function updateOrder(orderNumber, { status, adminNote }, admin) {
 
   if (set.status === 'cancelled') {
     await releaseStock(order.items.map((i) => ({ product: { _id: i.product }, qty: i.qty })))
+    if (order.giftCard?.code) await refundGiftCard(order.giftCard.code, order._id)
   }
   return updated
 }
